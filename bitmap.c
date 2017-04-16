@@ -840,7 +840,7 @@ bitmap_error_t bitmapOpenFile(bitmap_t* bitmap, char* filePath)
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Going to open file \"%s\" ...", filePath);
 
 	//Try to open the file:
-	FILE* file = fopen(filePath, "r");
+	FILE* file = fopen(filePath, "rb");
 
 	if (!file)
 	{
@@ -1568,7 +1568,7 @@ bitmap_error_t bitmapCreateFile(bitmap_t* bitmap, char* filePath, bitmap_bool_t 
 	}
 
 	//Try to open the file:
-	FILE* file = fopen(filePath, "w+");
+	FILE* file = fopen(filePath, "wb+");
 
 	if (!file)
 	{
