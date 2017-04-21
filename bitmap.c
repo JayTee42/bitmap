@@ -2,6 +2,12 @@
 
 
 
+//Min / max:
+#define BITMAP_MIN(A, B) ((A < B) ? A : B)
+#define BITMAP_MAX(A, B) ((A > B) ? A : B)
+
+
+
 //Includes from the standard library:
 #include <errno.h>
 #include <stdarg.h>
@@ -54,6 +60,159 @@ void bitmapLog(bitmap_logging_t logging, char* format, ...)
 	printf("\n");
 
 	va_end(args);
+}
+
+
+
+/**********************************************************************************************************************************************************************
+Converting pixels
+Thanks to http://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+Do we need FP? Not right now ...
+**********************************************************************************************************************************************************************/
+
+
+
+bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSpace)
+{
+	bitmap_pixel_rgb_t newPixel;
+
+	switch (colorSpace)
+	{
+	case BITMAP_COLOR_SPACE_HSV:
+
+		newPixel.c3 = pixel.c3;
+
+		if (pixel.c1 == 0)
+		{
+        	newPixel.r = pixel.c2;
+        	newPixel.g = pixel.c2;
+        	newPixel.b = pixel.c2;
+
+        	break;
+		}
+
+		bitmap_component_t region = pixel.c0 / 43;
+		bitmap_component_t remainder = (pixel.c0 - (region * 43)) * 6; 
+
+        bitmap_component_t p = (pixel.c2 * (255 - pixel.c1)) >> 8;
+        bitmap_component_t q = (pixel.c2 * (255 - ((pixel.c1 * remainder) >> 8))) >> 8;
+        bitmap_component_t t = (pixel.c2 * (255 - ((pixel.c1 * (255 - remainder)) >> 8))) >> 8;
+
+		switch (region)
+		{
+		case 0:
+
+			newPixel.r = pixel.c2;
+			newPixel.g = t;
+			newPixel.b = p;
+
+			break;
+		
+		case 1:
+
+			newPixel.r = q;
+			newPixel.g = pixel.c2;
+			newPixel.b = p;
+
+			break;
+
+		case 2:
+
+			newPixel.r = p;
+			newPixel.g = pixel.c2;
+			newPixel.b = t;
+
+			break;
+
+		case 3:
+
+			newPixel.r = p;
+			newPixel.g = q;
+			newPixel.b = pixel.c2;
+
+			break;
+
+		case 4:
+
+			newPixel.r = t;
+			newPixel.g = p;
+			newPixel.b = pixel.c2;
+
+			break;
+
+		default:
+
+			newPixel.r = pixel.c2;
+			newPixel.g = p;
+			newPixel.b = q;
+		}
+
+		break;
+
+	default:
+
+		//RGB:
+		newPixel.r = pixel.c0;
+		newPixel.g = pixel.c1;
+		newPixel.b = pixel.c2;
+		newPixel.c3 = pixel.c3;
+	}
+
+	return newPixel;
+}
+
+
+
+bitmap_pixel_t rgbToPixel(bitmap_pixel_rgb_t pixel, bitmap_color_space_t colorSpace)
+{
+	bitmap_pixel_t newPixel;
+
+	switch (colorSpace)
+	{
+	case BITMAP_COLOR_SPACE_HSV:
+
+		newPixel.c3 = pixel.c3;
+
+		bitmap_component_t rgbMin = BITMAP_MIN(pixel.r, BITMAP_MIN(pixel.g, pixel.b));
+		bitmap_component_t rgbMax = BITMAP_MAX(pixel.r, BITMAP_MAX(pixel.g, pixel.b));
+
+		newPixel.c2 = rgbMax;
+    
+		if (newPixel.c2 == 0)
+		{
+			newPixel.c0 = 0;
+			newPixel.c1 = 0;
+
+			break;
+		}
+
+		newPixel.c1 = (bitmap_component_t)((255 * (uint16_t)(rgbMax - rgbMin)) / rgbMax);
+
+		if (newPixel.c1 == 0)
+		{
+			newPixel.c0 = 0;
+			break;
+		}
+
+		if (rgbMax == pixel.r)
+			newPixel.c0 = 0 + ((43 * (pixel.g - pixel.b)) / (rgbMax - rgbMin));
+		else if (rgbMax == pixel.g)
+			newPixel.c0 = 85 + ((43 * (pixel.b - pixel.r)) / (rgbMax - rgbMin));
+		else
+			newPixel.c0 = 171 + ((43 * (pixel.r - pixel.g)) / (rgbMax - rgbMin));
+
+		break;
+
+	default:
+
+		//RGB:
+		newPixel.c0 = pixel.r;
+		newPixel.c1 = pixel.g;
+		newPixel.c2 = pixel.b;
+		newPixel.c3 = pixel.c3;
+	}
+
+	return newPixel;
 }
 
 
@@ -196,18 +355,19 @@ void bitmapReadRowColorDepth_8(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_
 void bitmapReadRowColorDepth_24(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
+	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
 	int baseIndex = rowPx * widthPx;
 
 	for (int colPx = 0; colPx < widthPx; colPx++)
 	{
-		bitmap_pixel_t currPixel;
+		bitmap_pixel_rgb_t currPixel;
 
 		currPixel.r = rowData[(3 * colPx) + 2];
 		currPixel.g = rowData[(3 * colPx) + 1];
 		currPixel.b = rowData[(3 * colPx) + 0];
-		currPixel.a = 0x00;
+		currPixel.c3 = 0x00;
 
-		outputData[baseIndex + colPx] = currPixel;
+		outputData[baseIndex + colPx] = rgbToPixel(currPixel, colorSpace);
 	}
 }
 
@@ -219,18 +379,19 @@ void bitmapReadRowColorDepth_24(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel
 void bitmapReadRowColorDepth_32(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
+	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
 	int baseIndex = rowPx * widthPx;
 
 	for (int colPx = 0; colPx < widthPx; colPx++)
 	{
-		bitmap_pixel_t currPixel;
+		bitmap_pixel_rgb_t currPixel;
 
 		currPixel.r = rowData[(4 * colPx) + 1];
 		currPixel.g = rowData[(4 * colPx) + 2];
 		currPixel.b = rowData[(4 * colPx) + 3];
-		currPixel.a = rowData[(4 * colPx) + 0];
+		currPixel.c3 = rowData[(4 * colPx) + 0];
 
-		outputData[baseIndex + colPx] = currPixel;
+		outputData[baseIndex + colPx] = rgbToPixel(currPixel, colorSpace);
 	}
 }
 
@@ -647,26 +808,30 @@ bitmap_error_t bitmapReadDIBHeader_Info(bitmap_t* bitmap)
 	//Finally, read the color table:
 	if (bitmap->parameters.colorTableEntries)
 	{
-		bitmap_pixel_t colorTable[256];
+		bitmap_pixel_rgb_t colorTable[256];
 
-		if ((success = bitmapReadBytes(bitmap->file, (uint8_t*)&colorTable, bitmap->parameters.colorTableEntries * sizeof(bitmap_pixel_t))) != BITMAP_ERROR_SUCCESS)
+		if ((success = bitmapReadBytes(bitmap->file, (uint8_t*)&colorTable, bitmap->parameters.colorTableEntries * sizeof(bitmap_pixel_rgb_t))) != BITMAP_ERROR_SUCCESS)
 		{
 			return success;
 		}
 
 		//Now shuffle the table to the right order:
-		bitmapLog(BITMAP_LOGGING_VERBOSE, "Color table:");
+		bitmapLog(BITMAP_LOGGING_VERBOSE, "Color table (RGBA):");
 
 		for (int i = 0; i < bitmap->parameters.colorTableEntries; i++)
 		{
-			bitmap_pixel_t currPixel = colorTable[i];
+			bitmap_pixel_rgb_t currPixel = colorTable[i];
+			bitmap_pixel_rgb_t newPixel;
 
-			bitmap->parameters.colorTable[i].r = currPixel.b;
-			bitmap->parameters.colorTable[i].g = currPixel.g;
-			bitmap->parameters.colorTable[i].b = currPixel.r;
-			bitmap->parameters.colorTable[i].a = currPixel.a;
+			newPixel.r = currPixel.b;
+			newPixel.g = currPixel.g;
+			newPixel.b = currPixel.r;
+			newPixel.c3 = currPixel.c3;
 
-			bitmapLog(BITMAP_LOGGING_VERBOSE, " (0x%02X, 0x%02X, 0x%02X, 0x%02X)", currPixel.b, currPixel.g, currPixel.r, currPixel.a);
+			bitmapLog(BITMAP_LOGGING_VERBOSE, " (0x%02X, 0x%02X, 0x%02X, 0x%02X)", newPixel.r, newPixel.g, newPixel.b, newPixel.c3);
+
+			//Convert the pixel to our color space and insert it:
+			bitmap->parameters.colorTable[i] = rgbToPixel(newPixel, bitmap->parameters.colorSpace);
 		}
 	}
 	else
@@ -874,7 +1039,7 @@ bitmap_error_t bitmapOpenFile(bitmap_t* bitmap, char* filePath)
 
 
 //User-accessible.
-bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx)
+bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace)
 {
 	//NULL the pointers:
 	*pixels = NULL;
@@ -884,6 +1049,9 @@ bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* wi
 	//Init a bitmap struct:
 	bitmap_t bitmap;
 	memset(&bitmap, 0, sizeof(bitmap_t));
+
+	//Assign our color space:
+	bitmap.parameters.colorSpace = colorSpace;
 
 	//Status var:
 	bitmap_error_t success;
@@ -1052,7 +1220,7 @@ bitmap_error_t bitmapWriteI32(FILE* file, int32_t value)
 
 
 
-//Internal pixel row write function (BITMAP_COLOR_DEPTH_32).
+//Internal pixel row writing function (BITMAP_COLOR_DEPTH_32).
 //
 //Errors:
 //- BITMAP_ERROR_IO                   An IO error has occurred.
@@ -1064,20 +1232,23 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* row
 	//Get the width:
 	uint32_t widthPx = bitmap->parameters.widthPx;
 
+	//Get the color space:
+	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
+
 	//Status var:
 	bitmap_error_t success;
 
 	for (int colPx = 0; colPx < widthPx; colPx++)
 	{
-		bitmap_pixel_t currPixel = rowData[colPx];
-		bitmap_pixel_t newPixel;
+		bitmap_pixel_rgb_t currPixel = pixelToRGB(rowData[colPx], colorSpace);
+		bitmap_pixel_rgb_t newPixel;
 
-		newPixel.a = currPixel.a;
+		newPixel.c3 = currPixel.c3;
 		newPixel.r = currPixel.b;
 		newPixel.g = currPixel.g;
 		newPixel.b = currPixel.r;
 
-		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)&newPixel, sizeof(bitmap_pixel_t))) != BITMAP_ERROR_SUCCESS)
+		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)&newPixel, sizeof(bitmap_pixel_rgb_t))) != BITMAP_ERROR_SUCCESS)
 		{
 			return success;
 		}
@@ -1088,15 +1259,7 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* row
 
 
 
-//Internal pixel read function (BITMAP_COMPRESSION_NONE).
-//If the function succeeds, the pixel pointer is valid.
-//
-//Errors:
-//- BITMAP_ERROR_IO                   An IO error has occurred.
-
-
-
-//Internal pixel write function (BITMAP_COMPRESSION_NONE).
+//Internal pixel writing function (BITMAP_COMPRESSION_NONE).
 //
 //Errors:
 //- BITMAP_ERROR_IO                   An IO error has occurred.

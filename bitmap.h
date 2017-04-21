@@ -71,11 +71,40 @@ typedef uint8_t bitmap_component_t;
 //A single pixel.
 typedef struct _bitmap_pixel_t_
 {
+	bitmap_component_t c0;
+	bitmap_component_t c1;
+	bitmap_component_t c2;
+	bitmap_component_t c3;
+} bitmap_pixel_t;
+
+
+
+//The color space:
+typedef int bitmap_color_space_t;
+
+#define BITMAP_COLOR_SPACE_RGB 0
+#define BITMAP_COLOR_SPACE_HSV 1
+
+
+
+//Typed pixels:
+typedef struct _bitmap_pixel_rgb_t
+{
 	bitmap_component_t r;
 	bitmap_component_t g;
 	bitmap_component_t b;
-	bitmap_component_t a;
-} bitmap_pixel_t;
+	bitmap_component_t c3;
+} bitmap_pixel_rgb_t;
+
+
+
+typedef struct _bitmap_pixel_hsv_t
+{
+	bitmap_component_t h;
+	bitmap_component_t s;
+	bitmap_component_t v;
+	bitmap_component_t c3;
+} bitmap_pixel_hsv_t;
 
 
 
@@ -107,7 +136,10 @@ typedef struct _bitmap_parameters_t_
 	//The number of valid entries in the color table:
 	uint32_t colorTableEntries;
 
-	//The color table (RGBA):
+	//The color space the user provides:
+	bitmap_color_space_t colorSpace;
+
+	//The color table:
 	bitmap_pixel_t colorTable[256 * sizeof(bitmap_pixel_t)];
 } bitmap_parameters_t;
 
@@ -136,7 +168,7 @@ Errors:
 - BITMAP_ERROR_MEMORY               Insufficient memory.
 **********************************************************************************************************************************************************************/
 
-bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx);
+bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace);
 
 
 
