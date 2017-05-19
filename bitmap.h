@@ -88,7 +88,7 @@ typedef int bitmap_color_space_t;
 
 
 //Typed pixels:
-typedef struct _bitmap_pixel_rgb_t
+typedef struct _bitmap_pixel_rgb_t_
 {
 	bitmap_component_t r;
 	bitmap_component_t g;
@@ -98,7 +98,7 @@ typedef struct _bitmap_pixel_rgb_t
 
 
 
-typedef struct _bitmap_pixel_hsv_t
+typedef struct _bitmap_pixel_hsv_t_
 {
 	bitmap_component_t h;
 	bitmap_component_t s;
