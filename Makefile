@@ -15,4 +15,4 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
-	rm $(TARGET) $(OBJECTS)
+	rm -f $(TARGET) $(OBJECTS)

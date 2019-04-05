@@ -1,20 +1,14 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
-
-
 //Includes from the standard library:
 #include <stdint.h>
-
-
 
 //Boolean stuff:
 typedef uint8_t bitmap_bool_t;
 
 #define BITMAP_BOOL_TRUE 1
 #define BITMAP_BOOL_FALSE 0
-
-
 
 //Logging:
 typedef int bitmap_logging_t;
@@ -24,8 +18,6 @@ typedef int bitmap_logging_t;
 #define BITMAP_LOGGING_VERBOSE 2
 
 #define BITMAP_LOGGING BITMAP_LOGGING_VERBOSE
-
-
 
 //The kind of DIB header that is used for the bitmap:
 typedef uint16_t bitmap_dib_header_format_t;
@@ -39,8 +31,6 @@ typedef uint16_t bitmap_dib_header_format_t;
 #define BITMAP_DIB_HEADER_INFO_V4 108
 #define BITMAP_DIB_HEADER_INFO_V5 124
 
-
-
 //The color depth of a bitmap:
 typedef uint16_t bitmap_color_depth_t;
 
@@ -51,8 +41,6 @@ typedef uint16_t bitmap_color_depth_t;
 #define BITMAP_COLOR_DEPTH_24 24
 #define BITMAP_COLOR_DEPTH_32 32
 
-
-
 //The compression of a bitmap:
 typedef int bitmap_compression_t;
 
@@ -61,12 +49,8 @@ typedef int bitmap_compression_t;
 #define BITMAP_COMPRESSION_BITFIELD_RGB 2
 #define BITMAP_COMPRESSION_BITFIELD_ARGB 6
 
-
-
 //A single component of a pixel (R, G, B, or A).
 typedef uint8_t bitmap_component_t;
-
-
 
 //A single pixel.
 typedef struct _bitmap_pixel_t_
@@ -77,15 +61,11 @@ typedef struct _bitmap_pixel_t_
 	bitmap_component_t c3;
 } bitmap_pixel_t;
 
-
-
 //The color space:
 typedef int bitmap_color_space_t;
 
 #define BITMAP_COLOR_SPACE_RGB 0
 #define BITMAP_COLOR_SPACE_HSV 1
-
-
 
 //Typed pixels:
 typedef struct _bitmap_pixel_rgb_t_
@@ -96,8 +76,6 @@ typedef struct _bitmap_pixel_rgb_t_
 	bitmap_component_t c3;
 } bitmap_pixel_rgb_t;
 
-
-
 typedef struct _bitmap_pixel_hsv_t_
 {
 	bitmap_component_t h;
@@ -105,8 +83,6 @@ typedef struct _bitmap_pixel_hsv_t_
 	bitmap_component_t v;
 	bitmap_component_t c3;
 } bitmap_pixel_hsv_t;
-
-
 
 //Parameters for bitmap creation.
 //This is our own format! We convert it dynamically from / to the actual bitmap.
@@ -143,8 +119,6 @@ typedef struct _bitmap_parameters_t_
 	bitmap_pixel_t colorTable[256 * sizeof(bitmap_pixel_t)];
 } bitmap_parameters_t;
 
-
-
 //Bitmap errors:
 typedef int bitmap_error_t;
 
@@ -155,36 +129,30 @@ typedef int bitmap_error_t;
 #define BITMAP_ERROR_MEMORY              4
 #define BITMAP_ERROR_FILE_EXISTS         5
 
-
-
 /**********************************************************************************************************************************************************************
-Read an existing bitmap file.
-If the functions return successfully, the allocated buffer must be released.
+	Read an existing bitmap file.
+	If the functions return successfully, the allocated buffer must be released.
 
-Errors:
-- BITMAP_ERROR_INVALID_PATH         The given path is not valid in any way (missing file, bad permissions etc.).
-- BITMAP_ERROR_INVALID_FILE_FORMAT  The given file is no valid bitmap.
-- BITMAP_ERROR_IO                   An IO error has occurred.
-- BITMAP_ERROR_MEMORY               Insufficient memory.
+	Errors:
+	- BITMAP_ERROR_INVALID_PATH         The given path is not valid in any way (missing file, bad permissions etc.).
+	- BITMAP_ERROR_INVALID_FILE_FORMAT  The given file is no valid bitmap.
+	- BITMAP_ERROR_IO                   An IO error has occurred.
+	- BITMAP_ERROR_MEMORY               Insufficient memory.
 **********************************************************************************************************************************************************************/
 
-bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace);
-
-
+bitmap_error_t bitmapReadPixels(const char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace);
 
 /**********************************************************************************************************************************************************************
-Write a bitmap file. Use the provided bitmap parameters.
+	Write a bitmap file. Use the provided bitmap parameters.
 
-Errors:
-- BITMAP_ERROR_INVALID_PATH         The given path is not valid in any way (missing intermediates, bad permissions etc.).
-- BITMAP_ERROR_INVALID_FILE_FORMAT  There are problems with the provided bitmap parameters.
-- BITMAP_ERROR_IO                   An IO error has occurred.
-- BITMAP_ERROR_MEMORY               Insufficient memory.
-- BITMAP_ERROR_FILE_EXISTS          The file at the given path already exists (and overwriteExisting is false).
+	Errors:
+	- BITMAP_ERROR_INVALID_PATH         The given path is not valid in any way (missing intermediates, bad permissions etc.).
+	- BITMAP_ERROR_INVALID_FILE_FORMAT  There are problems with the provided bitmap parameters.
+	- BITMAP_ERROR_IO                   An IO error has occurred.
+	- BITMAP_ERROR_MEMORY               Insufficient memory.
+	- BITMAP_ERROR_FILE_EXISTS          The file at the given path already exists (and overwriteExisting is false).
 **********************************************************************************************************************************************************************/
 
-bitmap_error_t bitmapWritePixels(char* filePath, bitmap_bool_t overwriteExisting, bitmap_parameters_t* parameters, bitmap_pixel_t* pixels);
-
-
+bitmap_error_t bitmapWritePixels(const char* filePath, bitmap_bool_t overwriteExisting, bitmap_parameters_t* parameters, const bitmap_pixel_t* pixels);
 
 #endif
