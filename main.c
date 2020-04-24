@@ -1,4 +1,6 @@
+#include <assert.h>
 #include <stdlib.h>
+
 #include "bitmap.h"
 
 int main(void)
@@ -7,9 +9,10 @@ int main(void)
 	bitmap_pixel_hsv_t* pixels;
 	int widthPx, heightPx;
 
-	bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
+	bitmap_error_t error = bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
+	assert(error == BITMAP_ERROR_SUCCESS);
 
-	//Write bitmap pixels, assume HSV in soruce:
+	//Write bitmap pixels, assume HSV in source:
 	bitmap_parameters_t params;
 
 	params.bottomUp = BITMAP_BOOL_TRUE;
@@ -20,7 +23,8 @@ int main(void)
 	params.dibHeaderFormat = BITMAP_DIB_HEADER_INFO;
 	params.colorSpace = BITMAP_COLOR_SPACE_HSV;
 
-	bitmapWritePixels("test.mod.bmp", BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
+	error = bitmapWritePixels("test.mod.bmp", BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
+	assert(error == BITMAP_ERROR_SUCCESS);
 
 	//Free the pixel array:
 	free(pixels);
