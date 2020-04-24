@@ -1,12 +1,8 @@
 #include "bitmap.h"
 
-
-
 //Min / max:
-#define BITMAP_MIN(A, B) ((A < B) ? A : B)
-#define BITMAP_MAX(A, B) ((A > B) ? A : B)
-
-
+#define BITMAP_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define BITMAP_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 //Includes from the standard library:
 #include <errno.h>
@@ -15,17 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 //Includes from POSIX:
 #include <unistd.h>
 
-
-
 //Constants:
 #define BITMAP_MAGIC_NUMBER 0x4D42
-
-
 
 //The internal representation of a bitmap.
 typedef struct _bitmap_t_
@@ -40,11 +30,9 @@ typedef struct _bitmap_t_
 	uint32_t pixelOffset;
 } bitmap_t;
 
-
-
 //Internal logging function based on BITMAP_LOGGING.
 //This always writes full lines.
-void bitmapLog(bitmap_logging_t logging, char* format, ...)
+void bitmapLog(bitmap_logging_t logging, const char* format, ...)
 {
 	//Check level:
 	if (BITMAP_LOGGING < logging)
@@ -62,15 +50,11 @@ void bitmapLog(bitmap_logging_t logging, char* format, ...)
 	va_end(args);
 }
 
-
-
 /**********************************************************************************************************************************************************************
-Converting pixels
-Thanks to http://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
-Do we need FP? Not right now ...
+	Converting pixels
+	Thanks to http://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+	Do we need FP? Not right now ...
 **********************************************************************************************************************************************************************/
-
-
 
 bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSpace)
 {
@@ -92,7 +76,7 @@ bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSp
 		}
 
 		bitmap_component_t region = pixel.c0 / 43;
-		bitmap_component_t remainder = (pixel.c0 - (region * 43)) * 6; 
+		bitmap_component_t remainder = (pixel.c0 - (region * 43)) * 6;
 
         bitmap_component_t p = (pixel.c2 * (255 - pixel.c1)) >> 8;
         bitmap_component_t q = (pixel.c2 * (255 - ((pixel.c1 * remainder) >> 8))) >> 8;
@@ -107,7 +91,7 @@ bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSp
 			newPixel.b = p;
 
 			break;
-		
+
 		case 1:
 
 			newPixel.r = q;
@@ -161,8 +145,6 @@ bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSp
 	return newPixel;
 }
 
-
-
 bitmap_pixel_t rgbToPixel(bitmap_pixel_rgb_t pixel, bitmap_color_space_t colorSpace)
 {
 	bitmap_pixel_t newPixel;
@@ -177,7 +159,7 @@ bitmap_pixel_t rgbToPixel(bitmap_pixel_rgb_t pixel, bitmap_color_space_t colorSp
 		bitmap_component_t rgbMax = BITMAP_MAX(pixel.r, BITMAP_MAX(pixel.g, pixel.b));
 
 		newPixel.c2 = rgbMax;
-    
+
 		if (newPixel.c2 == 0)
 		{
 			newPixel.c0 = 0;
@@ -215,13 +197,9 @@ bitmap_pixel_t rgbToPixel(bitmap_pixel_rgb_t pixel, bitmap_color_space_t colorSp
 	return newPixel;
 }
 
-
-
 /**********************************************************************************************************************************************************************
-Reading
+	Reading
 **********************************************************************************************************************************************************************/
-
-
 
 //Internal reading function.
 //Always reads "count" bytes.
@@ -231,7 +209,6 @@ Reading
 //- BITMAP_ERROR_IO  A read error has occurred. Includes unexpected EOF.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapReadBytes(FILE* file, uint8_t* buffer, int count)
 {
 	if (fread(buffer, 1, count, file) != count)
@@ -257,55 +234,40 @@ bitmap_error_t bitmapReadBytes(FILE* file, uint8_t* buffer, int count)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //Some typed functions with the same behavior:
 bitmap_error_t bitmapReadU8(FILE* file, uint8_t* value)
 {
 	return bitmapReadBytes(file, value, sizeof(uint8_t));
 }
 
-
-
 bitmap_error_t bitmapReadI8(FILE* file, int8_t* value)
 {
 	return bitmapReadBytes(file, (uint8_t*)value, sizeof(int8_t));
 }
-
-
 
 bitmap_error_t bitmapReadU16(FILE* file, uint16_t* value)
 {
 	return bitmapReadBytes(file, (uint8_t*)value, sizeof(uint16_t));
 }
 
-
-
 bitmap_error_t bitmapReadI16(FILE* file, int16_t* value)
 {
 	return bitmapReadBytes(file, (uint8_t*)value, sizeof(int16_t));
 }
-
-
 
 bitmap_error_t bitmapReadU32(FILE* file, uint32_t* value)
 {
 	return bitmapReadBytes(file, (uint8_t*)value, sizeof(uint32_t));
 }
 
-
-
 bitmap_error_t bitmapReadI32(FILE* file, int32_t* value)
 {
 	return bitmapReadBytes(file, (uint8_t*)value, sizeof(int32_t));
 }
 
-
-
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_1).
 //The buffers will not be released by this function.
-
-void bitmapReadRowColorDepth_1(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
+void bitmapReadRowColorDepth_1(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
 	int pixelsRead = 0;
@@ -331,12 +293,10 @@ void bitmapReadRowColorDepth_1(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_
 	} while (pixelsRead < widthPx);
 }
 
-
-
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_8).
 //The buffers will not be released by this function.
 
-void bitmapReadRowColorDepth_8(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
+void bitmapReadRowColorDepth_8(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
 	int baseIndex = rowPx * widthPx;
@@ -347,12 +307,10 @@ void bitmapReadRowColorDepth_8(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_
 	}
 }
 
-
-
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_24).
 //The buffers will not be released by this function.
 
-void bitmapReadRowColorDepth_24(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
+void bitmapReadRowColorDepth_24(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
 	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
@@ -371,12 +329,10 @@ void bitmapReadRowColorDepth_24(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel
 	}
 }
 
-
-
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_32).
 //The buffers will not be released by this function.
 
-void bitmapReadRowColorDepth_32(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
+void bitmapReadRowColorDepth_32(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, int rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
 	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
@@ -395,8 +351,6 @@ void bitmapReadRowColorDepth_32(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel
 	}
 }
 
-
-
 //Internal pixel read function (BITMAP_COMPRESSION_NONE).
 //If the function succeeds, the pixel pointer is valid.
 //
@@ -405,7 +359,6 @@ void bitmapReadRowColorDepth_32(bitmap_t* bitmap, uint8_t* rowData, bitmap_pixel
 //- BITMAP_ERROR_MEMORY               Insufficient memory.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapReadPixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_t** pixels)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Decompressing BITMAP_COMPRESSION_NONE ...");
@@ -439,7 +392,7 @@ bitmap_error_t bitmapReadPixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_t
 		free(outputData);
 
 		bitmapLog(BITMAP_LOGGING_DEFAULT, "Insufficient memory for allocating row buffer.");
-		return BITMAP_ERROR_MEMORY;		
+		return BITMAP_ERROR_MEMORY;
 	}
 
 	//Status var:
@@ -510,8 +463,6 @@ bitmap_error_t bitmapReadPixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_t
 	return success;
 }
 
-
-
 //Internal DIB header reading function (BITMAP_DIB_HEADER_INFO).
 //
 //Errors:
@@ -520,7 +471,6 @@ bitmap_error_t bitmapReadPixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_t
 //- BITMAP_ERROR_IO                   A read error has occurred.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapReadDIBHeader_Info(bitmap_t* bitmap)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Starting to read DIB header (BITMAP_DIB_HEADER_INFO) ...");
@@ -845,8 +795,6 @@ bitmap_error_t bitmapReadDIBHeader_Info(bitmap_t* bitmap)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //Internal header reading function.
 //
 //Errors:
@@ -855,7 +803,6 @@ bitmap_error_t bitmapReadDIBHeader_Info(bitmap_t* bitmap)
 //- BITMAP_ERROR_IO                   A read error has occurred.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapReadHeader(bitmap_t* bitmap)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Starting to read header ...");
@@ -940,27 +887,27 @@ bitmap_error_t bitmapReadHeader(bitmap_t* bitmap)
 			bitmapLog(BITMAP_LOGGING_DEFAULT, "DIB header format is not (yet) supported. Sorry!");
 
 			return BITMAP_ERROR_INVALID_FILE_FORMAT;
-            
+
         case BITMAP_DIB_HEADER_INFO_V5:
-            
+
             bitmapLog(BITMAP_LOGGING_VERBOSE, "Identified DIB header: BITMAP_DIB_HEADER_INFO_V5");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "DIB header format is not (yet) supported.");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "Trying fallback to V4 ...");
-            
+
         case BITMAP_DIB_HEADER_INFO_V4:
-            
+
             bitmapLog(BITMAP_LOGGING_VERBOSE, "Identified DIB header: BITMAP_DIB_HEADER_INFO_V4");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "DIB header format is not (yet) supported.");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "Trying fallback to V3 ...");
-            
+
         case BITMAP_DIB_HEADER_INFO_V3:
-            
+
             bitmapLog(BITMAP_LOGGING_VERBOSE, "Identified DIB header: BITMAP_DIB_HEADER_INFO_V3");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "DIB header format is not (yet) supported.");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "Trying fallback to V2 ...");
-            
+
         case BITMAP_DIB_HEADER_INFO_V2:
-            
+
             bitmapLog(BITMAP_LOGGING_VERBOSE, "Identified DIB header: BITMAP_DIB_HEADER_INFO_V2");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "DIB header format is not (yet) supported.");
             bitmapLog(BITMAP_LOGGING_DEFAULT, "Trying fallback to V1 ...");
@@ -988,8 +935,6 @@ bitmap_error_t bitmapReadHeader(bitmap_t* bitmap)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //Internal file open function.
 //If the function succeeds, the file pointer in the bitmap struct is valid.
 //
@@ -999,8 +944,7 @@ bitmap_error_t bitmapReadHeader(bitmap_t* bitmap)
 //- BITMAP_ERROR_IO                   An IO error has occurred.
 //- BITMAP_ERROR_MEMORY               Insufficient memory.
 //
-
-bitmap_error_t bitmapOpenFile(bitmap_t* bitmap, char* filePath)
+bitmap_error_t bitmapOpenFile(bitmap_t* bitmap, const char* filePath)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Going to open file \"%s\" ...", filePath);
 
@@ -1036,10 +980,8 @@ bitmap_error_t bitmapOpenFile(bitmap_t* bitmap, char* filePath)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //User-accessible.
-bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace)
+bitmap_error_t bitmapReadPixels(const char* filePath, bitmap_pixel_t** pixels, int* widthPx, int* heightPx, bitmap_color_space_t colorSpace)
 {
 	//NULL the pointers:
 	*pixels = NULL;
@@ -1139,13 +1081,9 @@ bitmap_error_t bitmapReadPixels(char* filePath, bitmap_pixel_t** pixels, int* wi
 	return success;
 }
 
-
-
 /**********************************************************************************************************************************************************************
-Writing
+	Writing
 **********************************************************************************************************************************************************************/
-
-
 
 //Internal writing function.
 //Always writes "count" bytes.
@@ -1155,7 +1093,6 @@ Writing
 //- BITMAP_ERROR_IO  A write error has occurred.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapWriteBytes(FILE* file, uint8_t* buffer, int count)
 {
 	if (fwrite(buffer, 1, count, file) != count)
@@ -1175,59 +1112,44 @@ bitmap_error_t bitmapWriteBytes(FILE* file, uint8_t* buffer, int count)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //Some typed functions with the same behavior:
 bitmap_error_t bitmapWriteU8(FILE* file, uint8_t value)
 {
 	return bitmapWriteBytes(file, &value, sizeof(uint8_t));
 }
 
-
-
 bitmap_error_t bitmapWriteI8(FILE* file, int8_t value)
 {
 	return bitmapWriteBytes(file, (uint8_t*)&value, sizeof(int8_t));
 }
-
-
 
 bitmap_error_t bitmapWriteU16(FILE* file, uint16_t value)
 {
 	return bitmapWriteBytes(file, (uint8_t*)&value, sizeof(uint16_t));
 }
 
-
-
 bitmap_error_t bitmapWriteI16(FILE* file, int16_t value)
 {
 	return bitmapWriteBytes(file, (uint8_t*)&value, sizeof(int16_t));
 }
-
-
 
 bitmap_error_t bitmapWriteU32(FILE* file, uint32_t value)
 {
 	return bitmapWriteBytes(file, (uint8_t*)&value, sizeof(uint32_t));
 }
 
-
-
 bitmap_error_t bitmapWriteI32(FILE* file, int32_t value)
 {
 	return bitmapWriteBytes(file, (uint8_t*)&value, sizeof(int32_t));
 }
 
-
-
-//Internal pixel row writing function (BITMAP_COLOR_DEPTH_32).
+//Internal pixel row writing function (BITMAP_COLOR_DEPTH_24).
 //
 //Errors:
 //- BITMAP_ERROR_IO                   An IO error has occurred.
 //
 //The file will not be closed by this function.
-
-bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* rowData)
+bitmap_error_t bitmapWriteRowColorDepth_24(bitmap_t* bitmap, const bitmap_pixel_t* rowData)
 {
 	//Get the width:
 	uint32_t widthPx = bitmap->parameters.widthPx;
@@ -1241,14 +1163,9 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* row
 	for (int colPx = 0; colPx < widthPx; colPx++)
 	{
 		bitmap_pixel_rgb_t currPixel = pixelToRGB(rowData[colPx], colorSpace);
-		bitmap_pixel_rgb_t newPixel;
+		bitmap_component_t pixelData[3] = { currPixel.b, currPixel.g, currPixel.r };
 
-		newPixel.c3 = currPixel.c3;
-		newPixel.r = currPixel.b;
-		newPixel.g = currPixel.g;
-		newPixel.b = currPixel.r;
-
-		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)&newPixel, sizeof(bitmap_pixel_rgb_t))) != BITMAP_ERROR_SUCCESS)
+		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)pixelData, sizeof(pixelData))) != BITMAP_ERROR_SUCCESS)
 		{
 			return success;
 		}
@@ -1257,7 +1174,36 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* row
 	return BITMAP_ERROR_SUCCESS;
 }
 
+//Internal pixel row writing function (BITMAP_COLOR_DEPTH_32).
+//
+//Errors:
+//- BITMAP_ERROR_IO                   An IO error has occurred.
+//
+//The file will not be closed by this function.
+bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, const bitmap_pixel_t* rowData)
+{
+	//Get the width:
+	uint32_t widthPx = bitmap->parameters.widthPx;
 
+	//Get the color space:
+	bitmap_color_space_t colorSpace = bitmap->parameters.colorSpace;
+
+	//Status var:
+	bitmap_error_t success;
+
+	for (int colPx = 0; colPx < widthPx; colPx++)
+	{
+		bitmap_pixel_rgb_t currPixel = pixelToRGB(rowData[colPx], colorSpace);
+		bitmap_component_t pixelData[4] = { currPixel.c3, currPixel.b, currPixel.g, currPixel.r };
+
+		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)pixelData, sizeof(pixelData))) != BITMAP_ERROR_SUCCESS)
+		{
+			return success;
+		}
+	}
+
+	return BITMAP_ERROR_SUCCESS;
+}
 
 //Internal pixel writing function (BITMAP_COMPRESSION_NONE).
 //
@@ -1265,8 +1211,7 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, bitmap_pixel_t* row
 //- BITMAP_ERROR_IO                   An IO error has occurred.
 //
 //The file will not be closed by this function.
-
-bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_t* pixels)
+bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, const bitmap_pixel_t* pixels)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Compressing BITMAP_COMPRESSION_NONE ...");
 
@@ -1287,11 +1232,18 @@ bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_
 	for (int rowPx = 0; rowPx < heightPx; rowPx++)
 	{
 		//Get the row:
-		bitmap_pixel_t* rowData = &pixels[(rowPx * widthPx)];
+		const bitmap_pixel_t* rowData = &pixels[(rowPx * widthPx)];
 
 		//Write it, depending on the color depth:
 		switch (bitmap->parameters.colorDepth)
 		{
+		case BITMAP_COLOR_DEPTH_24:
+
+			bitmapWriteRowColorDepth_24(bitmap, rowData);
+			success = BITMAP_ERROR_SUCCESS;
+
+			break;
+
 		case BITMAP_COLOR_DEPTH_32:
 
 			bitmapWriteRowColorDepth_32(bitmap, rowData);
@@ -1318,8 +1270,6 @@ bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_
 	return success;
 }
 
-
-
 //Internal DIB header writing function (BITMAP_DIB_HEADER_INFO).
 //
 //Errors:
@@ -1328,7 +1278,6 @@ bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, bitmap_pixel_
 //- BITMAP_ERROR_IO                   A read error has occurred.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapWriteDIBHeader_Info(bitmap_t* bitmap)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Starting to write DIB header (BITMAP_DIB_HEADER_INFO) ...");
@@ -1564,7 +1513,6 @@ bitmap_error_t bitmapWriteDIBHeader_Info(bitmap_t* bitmap)
 //- BITMAP_ERROR_IO                   A read error has occurred.
 //
 //The file will not be closed by this function.
-
 bitmap_error_t bitmapWriteHeader(bitmap_t* bitmap)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Starting to write header ...");
@@ -1679,8 +1627,6 @@ bitmap_error_t bitmapWriteHeader(bitmap_t* bitmap)
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
 //Internal file creation function.
 //If the function succeeds, the file pointer in the bitmap struct is valid.
 //
@@ -1689,8 +1635,7 @@ bitmap_error_t bitmapWriteHeader(bitmap_t* bitmap)
 //- BITMAP_ERROR_INVALID_PATH  The given path is not valid in any way (missing intermediates, bad permissions etc.).
 //- BITMAP_ERROR_MEMORY        Insufficient memory.
 //- BITMAP_ERROR_FILE_EXISTS   The file at the given path already exists (and overwriteExisting is false).
-
-bitmap_error_t bitmapCreateFile(bitmap_t* bitmap, char* filePath, bitmap_bool_t overwriteExisting)
+bitmap_error_t bitmapCreateFile(bitmap_t* bitmap, const char* filePath, bitmap_bool_t overwriteExisting)
 {
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Going to create file \"%s\" ...", filePath);
 
@@ -1762,9 +1707,7 @@ bitmap_error_t bitmapCreateFile(bitmap_t* bitmap, char* filePath, bitmap_bool_t 
 	return BITMAP_ERROR_SUCCESS;
 }
 
-
-
-bitmap_error_t bitmapWritePixels(char* filePath, bitmap_bool_t overwriteExisting, bitmap_parameters_t* parameters, bitmap_pixel_t* pixels)
+bitmap_error_t bitmapWritePixels(const char* filePath, bitmap_bool_t overwriteExisting, bitmap_parameters_t* parameters, const bitmap_pixel_t* pixels)
 {
 	//Init a bitmap struct:
 	bitmap_t bitmap;
@@ -1858,7 +1801,7 @@ bitmap_error_t bitmapWritePixels(char* filePath, bitmap_bool_t overwriteExisting
 		//Close the file:
 		fclose(bitmap.file);
 
-		return BITMAP_ERROR_IO;		
+		return BITMAP_ERROR_IO;
 	}
 
 	//Seek the offset for the pixel offset:
@@ -1881,7 +1824,7 @@ bitmap_error_t bitmapWritePixels(char* filePath, bitmap_bool_t overwriteExisting
 		//Close the file:
 		fclose(bitmap.file);
 
-		return BITMAP_ERROR_IO;		
+		return BITMAP_ERROR_IO;
 	}
 
 	//Flush:
