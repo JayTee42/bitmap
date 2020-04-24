@@ -68,9 +68,9 @@ bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSp
 
 		if (pixel.c1 == 0)
 		{
-        	newPixel.r = pixel.c2;
-        	newPixel.g = pixel.c2;
-        	newPixel.b = pixel.c2;
+			newPixel.r = pixel.c2;
+			newPixel.g = pixel.c2;
+			newPixel.b = pixel.c2;
 
         	break;
 		}
@@ -78,9 +78,9 @@ bitmap_pixel_rgb_t pixelToRGB(bitmap_pixel_t pixel, bitmap_color_space_t colorSp
 		bitmap_component_t region = pixel.c0 / 43;
 		bitmap_component_t remainder = (pixel.c0 - (region * 43)) * 6;
 
-        bitmap_component_t p = (pixel.c2 * (255 - pixel.c1)) >> 8;
-        bitmap_component_t q = (pixel.c2 * (255 - ((pixel.c1 * remainder) >> 8))) >> 8;
-        bitmap_component_t t = (pixel.c2 * (255 - ((pixel.c1 * (255 - remainder)) >> 8))) >> 8;
+		bitmap_component_t p = (pixel.c2 * (255 - pixel.c1)) >> 8;
+		bitmap_component_t q = (pixel.c2 * (255 - ((pixel.c1 * remainder) >> 8))) >> 8;
+		bitmap_component_t t = (pixel.c2 * (255 - ((pixel.c1 * (255 - remainder)) >> 8))) >> 8;
 
 		switch (region)
 		{
