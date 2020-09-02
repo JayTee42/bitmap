@@ -53,8 +53,7 @@ typedef int bitmap_compression_t;
 typedef uint8_t bitmap_component_t;
 
 //A single pixel.
-typedef struct _bitmap_pixel_t_
-{
+typedef struct {
 	bitmap_component_t c0;
 	bitmap_component_t c1;
 	bitmap_component_t c2;
@@ -68,16 +67,14 @@ typedef int bitmap_color_space_t;
 #define BITMAP_COLOR_SPACE_HSV 1
 
 //Typed pixels:
-typedef struct _bitmap_pixel_rgb_t_
-{
+typedef struct {
 	bitmap_component_t r;
 	bitmap_component_t g;
 	bitmap_component_t b;
 	bitmap_component_t c3;
 } bitmap_pixel_rgb_t;
 
-typedef struct _bitmap_pixel_hsv_t_
-{
+typedef struct {
 	bitmap_component_t h;
 	bitmap_component_t s;
 	bitmap_component_t v;
@@ -86,8 +83,7 @@ typedef struct _bitmap_pixel_hsv_t_
 
 //Parameters for bitmap creation.
 //This is our own format! We convert it dynamically from / to the actual bitmap.
-typedef struct _bitmap_parameters_t_
-{
+typedef struct {
 	//Is this bitmap bottom-up?
 	bitmap_bool_t bottomUp;
 

@@ -18,8 +18,7 @@
 #define BITMAP_MAGIC_NUMBER 0x4D42
 
 //The internal representation of a bitmap.
-typedef struct _bitmap_t_
-{
+typedef struct {
 	//The embedded bitmap parameters:
 	bitmap_parameters_t parameters;
 
