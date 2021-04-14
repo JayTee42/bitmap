@@ -341,9 +341,9 @@ void bitmapReadRowColorDepth_32(bitmap_t* bitmap, const uint8_t* rowData, bitmap
 	{
 		bitmap_pixel_rgb_t currPixel;
 
-		currPixel.r = rowData[(4 * colPx) + 1];
+		currPixel.r = rowData[(4 * colPx) + 3];
 		currPixel.g = rowData[(4 * colPx) + 2];
-		currPixel.b = rowData[(4 * colPx) + 3];
+		currPixel.b = rowData[(4 * colPx) + 1];
 		currPixel.c3 = rowData[(4 * colPx) + 0];
 
 		outputData[baseIndex + colPx] = rgbToPixel(currPixel, colorSpace);
