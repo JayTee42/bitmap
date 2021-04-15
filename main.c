@@ -7,7 +7,7 @@ int main(void)
 {
 	//Read bitmap pixels, convert to HSV:
 	bitmap_pixel_hsv_t* pixels;
-	int widthPx, heightPx;
+	uint32_t widthPx, heightPx;
 
 	bitmap_error_t error = bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
 	assert(error == BITMAP_ERROR_SUCCESS);
