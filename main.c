@@ -9,7 +9,7 @@ int main(void)
 	bitmap_pixel_hsv_t* pixels;
 	uint32_t widthPx, heightPx;
 
-	bitmap_error_t error = bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
+	bitmap_error_t error = bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_RGB);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
 	//Write bitmap pixels, assume HSV in source:
@@ -18,10 +18,10 @@ int main(void)
 	params.bottomUp = BITMAP_BOOL_TRUE;
 	params.widthPx = widthPx;
 	params.heightPx = heightPx;
-	params.colorDepth = BITMAP_COLOR_DEPTH_32;
+	params.colorDepth = BITMAP_COLOR_DEPTH_24;
 	params.compression = BITMAP_COMPRESSION_NONE;
 	params.dibHeaderFormat = BITMAP_DIB_HEADER_INFO;
-	params.colorSpace = BITMAP_COLOR_SPACE_HSV;
+	params.colorSpace = BITMAP_COLOR_SPACE_RGB;
 
 	error = bitmapWritePixels("test.mod.bmp", BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
 	assert(error == BITMAP_ERROR_SUCCESS);

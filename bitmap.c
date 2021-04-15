@@ -296,7 +296,6 @@ void bitmapReadRowColorDepth_1(bitmap_t* bitmap, const uint8_t* rowData, bitmap_
 
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_8).
 //The buffers will not be released by this function.
-
 void bitmapReadRowColorDepth_8(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, uint32_t rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
@@ -310,7 +309,6 @@ void bitmapReadRowColorDepth_8(bitmap_t* bitmap, const uint8_t* rowData, bitmap_
 
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_24).
 //The buffers will not be released by this function.
-
 void bitmapReadRowColorDepth_24(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, uint32_t rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
@@ -332,7 +330,6 @@ void bitmapReadRowColorDepth_24(bitmap_t* bitmap, const uint8_t* rowData, bitmap
 
 //Internal pixel row read function (BITMAP_COLOR_DEPTH_32).
 //The buffers will not be released by this function.
-
 void bitmapReadRowColorDepth_32(bitmap_t* bitmap, const uint8_t* rowData, bitmap_pixel_t* outputData, uint32_t rowPx)
 {
 	uint32_t widthPx = bitmap->parameters.widthPx;
@@ -343,10 +340,10 @@ void bitmapReadRowColorDepth_32(bitmap_t* bitmap, const uint8_t* rowData, bitmap
 	{
 		bitmap_pixel_rgb_t currPixel;
 
-		currPixel.r = rowData[(4 * colPx) + 3];
-		currPixel.g = rowData[(4 * colPx) + 2];
-		currPixel.b = rowData[(4 * colPx) + 1];
-		currPixel.c3 = rowData[(4 * colPx) + 0];
+		currPixel.r = rowData[(4 * colPx) + 2];
+		currPixel.g = rowData[(4 * colPx) + 1];
+		currPixel.b = rowData[(4 * colPx) + 0];
+		currPixel.c3 = rowData[(4 * colPx) + 3];
 
 		outputData[baseIndex + colPx] = rgbToPixel(currPixel, colorSpace);
 	}
@@ -1154,7 +1151,7 @@ bitmap_error_t bitmapWriteI32(FILE* file, int32_t value)
 //- BITMAP_ERROR_IO                   An IO error has occurred.
 //
 //The file will not be closed by this function.
-bitmap_error_t bitmapWriteRowColorDepth_24(bitmap_t* bitmap, const bitmap_pixel_t* rowData)
+bitmap_error_t bitmapWriteRowColorDepth_24(bitmap_t* bitmap, const bitmap_pixel_t* rowData, size_t paddingBytesPerRow)
 {
 	//Get the width:
 	uint32_t widthPx = bitmap->parameters.widthPx;
@@ -1171,6 +1168,14 @@ bitmap_error_t bitmapWriteRowColorDepth_24(bitmap_t* bitmap, const bitmap_pixel_
 		bitmap_component_t pixelData[3] = { currPixel.b, currPixel.g, currPixel.r };
 
 		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)pixelData, sizeof(pixelData))) != BITMAP_ERROR_SUCCESS)
+		{
+			return success;
+		}
+	}
+
+	for (size_t i = 0; i < paddingBytesPerRow; i++)
+	{
+		if ((success = bitmapWriteU8(bitmap->file, 0x00)) != BITMAP_ERROR_SUCCESS)
 		{
 			return success;
 		}
@@ -1199,7 +1204,7 @@ bitmap_error_t bitmapWriteRowColorDepth_32(bitmap_t* bitmap, const bitmap_pixel_
 	for (uint32_t colPx = 0; colPx < widthPx; colPx++)
 	{
 		bitmap_pixel_rgb_t currPixel = pixelToRGB(rowData[colPx], colorSpace);
-		bitmap_component_t pixelData[4] = { currPixel.c3, currPixel.b, currPixel.g, currPixel.r };
+		bitmap_component_t pixelData[4] = { currPixel.b, currPixel.g, currPixel.r, currPixel.c3 };
 
 		if ((success = bitmapWriteBytes(bitmap->file, (uint8_t*)pixelData, sizeof(pixelData))) != BITMAP_ERROR_SUCCESS)
 		{
@@ -1227,8 +1232,9 @@ bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, const bitmap_
 	//How many bytes are in a row?
 	size_t bitsPerRow = bitmap->parameters.colorDepth * widthPx;
 	size_t bytesPerRow = ((bitsPerRow + 31) / 32) * 4;
+	size_t paddingBytesPerRow = bytesPerRow - (bitsPerRow / 8);
 
-	bitmapLog(BITMAP_LOGGING_VERBOSE, "Bits / bytes per row: %zu / %zu", bitsPerRow, bytesPerRow);
+	bitmapLog(BITMAP_LOGGING_VERBOSE, "Bits / bytes / padding bytes per row: %zu / %zu / %zu", bitsPerRow, bytesPerRow, paddingBytesPerRow);
 
 	//Status var:
 	bitmap_error_t success;
@@ -1244,13 +1250,14 @@ bitmap_error_t bitmapWritePixelsCompression_None(bitmap_t* bitmap, const bitmap_
 		{
 		case BITMAP_COLOR_DEPTH_24:
 
-			bitmapWriteRowColorDepth_24(bitmap, rowData);
+			bitmapWriteRowColorDepth_24(bitmap, rowData, paddingBytesPerRow);
 			success = BITMAP_ERROR_SUCCESS;
 
 			break;
 
 		case BITMAP_COLOR_DEPTH_32:
 
+			//Note: Never padded!
 			bitmapWriteRowColorDepth_32(bitmap, rowData);
 			success = BITMAP_ERROR_SUCCESS;
 

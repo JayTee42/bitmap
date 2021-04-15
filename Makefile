@@ -1,10 +1,10 @@
 CC = gcc
-CFLAGS = -c -Wall -g -Os
+CFLAGS = -c -Wextra -O3
 LD = $(CC)
 LDFLAGS =
 
 TARGET = bitmap
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+OBJECTS = main.o bitmap.o
 
 all: $(TARGET)
 
