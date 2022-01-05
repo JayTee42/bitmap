@@ -11,8 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-//Includes from POSIX:
-#include <unistd.h>
+#ifdef __unix__
+	#include <unistd.h>
+#endif
+
+// Constants R_OK and W_OK in windows not defined => redefinition here
+#define READ_PERM  0x02
+#define WRITE_PERM 0x04
 
 //Constants:
 #define BITMAP_MAGIC_NUMBER 0x4D42
@@ -1652,7 +1657,7 @@ bitmap_error_t bitmapCreateFile(bitmap_t* bitmap, const char* filePath, bitmap_b
 	bitmapLog(BITMAP_LOGGING_VERBOSE, "Going to create file \"%s\" ...", filePath);
 
 	//Check the access to the file path:
-	if (access(filePath, R_OK | W_OK) == 0)
+	if (access(filePath, READ_PERM | WRITE_PERM) == 0)
 	{
 		//The file already exists. Is that allowed?
 		if (!overwriteExisting)
